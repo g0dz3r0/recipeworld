@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Hero from './components/Hero';
 import Marquee from './components/Marquee';
 import Navbar from './components/Navbar';
@@ -20,7 +20,7 @@ interface Cuisine {
 }
 
 interface Recipe {
-  id: string;
+  id: string | number;
   title: string;
   emoji: string;
   author: string;
@@ -28,6 +28,9 @@ interface Recipe {
   time: string;
   gradient: string;
 }
+const SAVED_RECIPES_STORAGE_KEY = 'recipeworld:savedRecipes';
+
+const getRecipeKey = (recipe: Recipe) => String(recipe.id);
 
 export default function App() {
   const [selectedCuisine, setSelectedCuisine] = useState<Cuisine | null>(null);
@@ -36,6 +39,24 @@ export default function App() {
   const [isAIActive, setIsAIActive] = useState(false);
   const [profileTab, setProfileTab] = useState<'profile' | 'saved' | 'notifications' | 'settings' | null>(null);
   const [viewingUser, setViewingUser] = useState<MockUser | null>(null);
+  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>(() => {
+    try {
+      const rawSavedRecipes = localStorage.getItem(SAVED_RECIPES_STORAGE_KEY);
+      if (!rawSavedRecipes) return [];
+      const parsedSavedRecipes = JSON.parse(rawSavedRecipes);
+      return Array.isArray(parsedSavedRecipes) ? parsedSavedRecipes : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SAVED_RECIPES_STORAGE_KEY, JSON.stringify(savedRecipes));
+    } catch {
+      // ignore persistence errors
+    }
+  }, [savedRecipes]);
 
   const handleBack = () => {
     setSelectedCuisine(null);
@@ -50,6 +71,20 @@ export default function App() {
     handleBack();
     // In a real app, clear auth tokens here
   };
+
+  const handleToggleSaveRecipe = (recipe: Recipe) => {
+    setSavedRecipes((prevSavedRecipes) => {
+      const recipeKey = getRecipeKey(recipe);
+      const isAlreadySaved = prevSavedRecipes.some((savedRecipe) => getRecipeKey(savedRecipe) === recipeKey);
+      if (isAlreadySaved) {
+        return prevSavedRecipes.filter((savedRecipe) => getRecipeKey(savedRecipe) !== recipeKey);
+      }
+      return [...prevSavedRecipes, recipe];
+    });
+  };
+
+  const isRecipeSaved = (recipe: Recipe) =>
+    savedRecipes.some((savedRecipe) => getRecipeKey(savedRecipe) === getRecipeKey(recipe));
 
   return (
     <div className="min-h-screen selection:bg-orange-100 selection:text-orange-900 overflow-x-hidden">
@@ -82,12 +117,17 @@ export default function App() {
               onLogout={handleLogout}
             />
             <Marquee onSelectCuisine={(c) => setSelectedCuisine(c)} />
-            <Footer />
+            <Footer
+              onOpenRecipes={() => setIsExploring(true)}
+              onOpenAIAssistant={() => setIsAIActive(true)}
+            />
           </motion.div>
         ) : profileTab ? (
           <ProfileLayout 
             key="profile"
             initialTab={profileTab}
+            savedRecipes={savedRecipes}
+            onSelectRecipe={(recipe) => { setProfileTab(null); setSelectedRecipe(recipe); }}
             onBack={handleBack}
             onLogout={handleLogout}
           />
@@ -112,7 +152,7 @@ export default function App() {
           >
             <RecipesExplorer
               onBack={handleBack}
-              onSelectRecipe={(r) => setSelectedRecipe(r)}
+              onSelectRecipe={(r) => { setIsExploring(false); setSelectedRecipe(r); }}
               onAIClick={() => setIsAIActive(true)}
               onNavigateProfile={(tab) => setProfileTab(tab)}
               onLogout={handleLogout}
@@ -129,6 +169,8 @@ export default function App() {
             <RecipeDetail
               recipe={selectedRecipe}
               onBack={handleBack}
+              isSaved={isRecipeSaved(selectedRecipe)}
+              onToggleSave={handleToggleSaveRecipe}
               onViewUser={(user) => { setSelectedRecipe(null); setViewingUser(user); }}
             />
           </motion.div>

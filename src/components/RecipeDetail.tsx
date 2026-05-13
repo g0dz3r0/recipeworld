@@ -2,26 +2,30 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Clock, Heart, ChefHat, Share2, Bookmark, Check } from 'lucide-react';
 import { findUserByName, MockUser } from '../data/recipes';
+interface RecipeDetailRecipe {
+  id: string | number;
+  title: string;
+  emoji: string;
+  author: string;
+  likes: string;
+  time: string;
+  gradient: string;
+}
 
 interface RecipeDetailProps {
-  recipe: {
-    title: string;
-    emoji: string;
-    author: string;
-    likes: string;
-    time: string;
-    gradient: string;
-  };
+  recipe: RecipeDetailRecipe;
   onBack: () => void;
+  isSaved?: boolean;
+  onToggleSave?: (recipe: RecipeDetailRecipe) => void;
   onViewUser?: (user: MockUser) => void;
 }
 
-export default function RecipeDetail({ recipe, onBack, onViewUser }: RecipeDetailProps) {
+export default function RecipeDetail({ recipe, onBack, isSaved, onToggleSave, onViewUser }: RecipeDetailProps) {
   const authorUser = findUserByName(recipe.author);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(recipe.likes);
-  const [isSaved, setIsSaved] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+  const recipeSaved = Boolean(isSaved);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -113,10 +117,10 @@ export default function RecipeDetail({ recipe, onBack, onViewUser }: RecipeDetai
                 <Share2 size={20} />
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className={`p-3 rounded-2xl transition-colors cursor-pointer border ${isSaved ? 'bg-orange-50 text-[#D85A30] border-orange-200' : 'bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border-transparent hover:border-orange-100'}`}
+                onClick={() => onToggleSave?.(recipe)}
+                className={`p-3 rounded-2xl transition-colors cursor-pointer border ${recipeSaved ? 'bg-orange-50 text-[#D85A30] border-orange-200' : 'bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border-transparent hover:border-orange-100'}`}
               >
-                <Bookmark size={20} className={isSaved ? 'fill-[#D85A30]' : ''} />
+                <Bookmark size={20} className={recipeSaved ? 'fill-[#D85A30]' : ''} />
               </button>
 
               {/* Share toast */}

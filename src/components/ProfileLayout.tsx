@@ -5,18 +5,29 @@ import {
   Camera, Mail, Shield, Smartphone, Heart, Clock, ChefHat
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { MOCK_RECIPES } from '../data/recipes';
 
 type Tab = 'profile' | 'saved' | 'notifications' | 'settings';
+
+interface SavedRecipe {
+  id: string | number;
+  title: string;
+  emoji: string;
+  author: string;
+  likes: string;
+  time: string;
+  gradient: string;
+}
 
 interface ProfileLayoutProps {
   key?: string;
   initialTab: Tab;
+  savedRecipes?: SavedRecipe[];
+  onSelectRecipe?: (recipe: SavedRecipe) => void;
   onBack: () => void;
   onLogout: () => void;
 }
 
-export default function ProfileLayout({ initialTab, onBack, onLogout }: ProfileLayoutProps) {
+export default function ProfileLayout({ initialTab, savedRecipes = [], onSelectRecipe, onBack, onLogout }: ProfileLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [avatarUrl, setAvatarUrl] = useState('https://api.dicebear.com/7.x/avataaars/svg?seed=Felix');
   const [username, setUsername] = useState('Николай Кулинаров');
@@ -175,24 +186,38 @@ export default function ProfileLayout({ initialTab, onBack, onLogout }: ProfileL
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-[#1a0a00]">Сохраненные рецепты</h2>
-                <span className="text-sm text-[#78716c]">{MOCK_RECIPES.length} рецептов</span>
+                <span className="text-sm text-[#78716c]">
+                  {savedRecipes.length} {savedRecipes.length === 1 ? 'рецепт' : (savedRecipes.length >= 2 && savedRecipes.length <= 4 ? 'рецепта' : 'рецептов')}
+                </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {MOCK_RECIPES.slice(0, 4).map(recipe => (
-                  <div key={recipe.id} className="group bg-slate-50 rounded-3xl p-4 flex gap-4 hover:bg-orange-50 transition-colors cursor-pointer">
-                    <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-3xl shrink-0">
-                      {recipe.emoji}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm text-[#1a0a00] mb-2">{recipe.title}</h3>
-                      <div className="flex items-center gap-3 text-[10px] text-[#78716c]">
-                        <span className="flex items-center gap-1 font-bold">❤️ {recipe.likes}</span>
-                        <span className="flex items-center gap-1 font-bold">⏱ {recipe.time}</span>
+              {savedRecipes.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-4">🔖</div>
+                  <h3 className="text-xl font-bold text-[#1a0a00] mb-2">Пока ничего не сохранено</h3>
+                  <p className="text-[#78716c]">Откройте любой рецепт и нажмите на закладку — он появится здесь.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {savedRecipes.map(recipe => (
+                    <div
+                      key={String(recipe.id)}
+                      onClick={() => onSelectRecipe?.(recipe)}
+                      className="group bg-slate-50 rounded-3xl p-4 flex gap-4 hover:bg-orange-50 transition-colors cursor-pointer"
+                    >
+                      <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-3xl shrink-0">
+                        {recipe.emoji}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-sm text-[#1a0a00] mb-2">{recipe.title}</h3>
+                        <div className="flex items-center gap-3 text-[10px] text-[#78716c]">
+                          <span className="flex items-center gap-1 font-bold">❤️ {recipe.likes}</span>
+                          <span className="flex items-center gap-1 font-bold">⏱ {recipe.time}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 

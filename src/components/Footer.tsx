@@ -1,6 +1,11 @@
 import { Instagram, Twitter, Facebook, Mail } from 'lucide-react';
 
-export default function Footer() {
+interface FooterProps {
+  onOpenRecipes: () => void;
+  onOpenAIAssistant: () => void;
+}
+
+export default function Footer({ onOpenRecipes, onOpenAIAssistant }: FooterProps) {
   return (
     <footer className="bg-white border-t border-orange-100/60 pt-20 pb-40 px-6" id="about-section">
       <div className="max-w-7xl mx-auto">
@@ -20,20 +25,81 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-[#1a0a00] mb-6">Приложение</h4>
             <ul className="space-y-4 text-sm text-[#78716c]">
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Функции</a></li>
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Рецепты</a></li>
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Сообщество</a></li>
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">ИИ-Помощник</a></li>
+              <li>
+                <a
+                  href="/site-features.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#D85A30] transition-colors"
+                >
+                  Функции
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#recipes-explorer"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onOpenRecipes();
+                  }}
+                  className="hover:text-[#D85A30] transition-colors"
+                >
+                  Рецепты
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  onClick={(event) => event.preventDefault()}
+                  aria-disabled="true"
+                  className="opacity-70 cursor-not-allowed"
+                >
+                  Сообщество
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#ai-assistant"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onOpenAIAssistant();
+                  }}
+                  className="hover:text-[#D85A30] transition-colors"
+                >
+                  ИИ-Помощник
+                </a>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-[#1a0a00] mb-6">Поддержка</h4>
             <ul className="space-y-4 text-sm text-[#78716c]">
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Помощь</a></li>
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Безопасность</a></li>
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Условия</a></li>
-              <li><a href="#" className="hover:text-[#D85A30] transition-colors">Конфиденциальность</a></li>
+              <li>
+                <a
+                  href="https://t.me/g0dz3r0bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#D85A30] transition-colors"
+                >
+                  Помощь
+                </a>
+              </li>
+              <li>
+                <a href="/security.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#D85A30] transition-colors">
+                  Безопасность
+                </a>
+              </li>
+              <li>
+                <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#D85A30] transition-colors">
+                  Условия
+                </a>
+              </li>
+              <li>
+                <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#D85A30] transition-colors">
+                  Конфиденциальность
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -63,8 +129,8 @@ export default function Footer() {
         <div className="pt-8 border-t border-orange-50 flex flex-wrap justify-between gap-4 text-[#78716c] text-[12px] font-medium">
           <p>© 2026 RecipeWorld App. Сделано с любовью к еде.</p>
           <div className="flex gap-8">
-            <a href="#" className="hover:text-[#D85A30] transition-colors">Cookie Policy</a>
-            <a href="#" className="hover:text-[#D85A30] transition-colors">Legal Terms</a>
+            <a href="/privacy.html#cookies" target="_blank" rel="noopener noreferrer" className="hover:text-[#D85A30] transition-colors">Cookie Policy</a>
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#D85A30] transition-colors">Legal Terms</a>
           </div>
         </div>
       </div>
