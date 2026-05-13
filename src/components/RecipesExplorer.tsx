@@ -1,10 +1,25 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Search, Filter, Clock, Heart, Sparkles } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Clock, Heart, Sparkles, Plus } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { MOCK_RECIPES, CATEGORIES, findUserByName, MockUser } from '../data/recipes';
 import ProfileButton from './ProfileButton';
 import FridgeButton from './FridgeButton';
+
+interface ExtraRecipe {
+  id: string | number;
+  title: string;
+  emoji: string;
+  author: string;
+  likes: string;
+  time: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  timeRange: '<15' | '15-30' | '>30';
+  gradient?: string;
+  imageUrl?: string;
+  createdAt?: number;
+}
 
 interface RecipesExplorerProps {
   onBack: () => void;
@@ -13,16 +28,28 @@ interface RecipesExplorerProps {
   onNavigateProfile?: (tab: any) => void;
   onLogout?: () => void;
   onViewUser?: (user: MockUser) => void;
+  extraRecipes?: ExtraRecipe[];
+  onCreateRecipe?: () => void;
 }
 
-export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onNavigateProfile, onLogout, onViewUser }: RecipesExplorerProps) {
+export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onNavigateProfile, onLogout, onViewUser, extraRecipes = [], onCreateRecipe }: RecipesExplorerProps) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [difficulty, setDifficulty] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
 
-  const filteredRecipes = MOCK_RECIPES.filter(recipe => {
+  const sortedExtras = [...extraRecipes].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+  type DisplayRecipe = ExtraRecipe;
+  const allRecipes: DisplayRecipe[] = [
+    ...sortedExtras,
+    ...MOCK_RECIPES.map<DisplayRecipe>(r => ({
+      ...r,
+      difficulty: r.difficulty as 'easy' | 'medium' | 'hard',
+      timeRange: r.timeRange as '<15' | '15-30' | '>30',
+    })),
+  ];
+  const filteredRecipes = allRecipes.filter(recipe => {
     const matchesCategory = activeCategory === 'all' || recipe.category === activeCategory;
     const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDifficulty = difficulty === 'all' || recipe.difficulty === difficulty;
@@ -72,18 +99,27 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
               className="w-full bg-white border border-orange-100 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all shadow-sm"
             />
           </div>
-          <button 
+          <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className={cn(
               "px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-medium transition-all shadow-sm border cursor-pointer",
-              isFilterOpen 
-                ? "bg-orange-50 border-orange-300 text-[#D85A30]" 
+              isFilterOpen
+                ? "bg-orange-50 border-orange-300 text-[#D85A30]"
                 : "bg-white border-orange-100 text-[#1a0a00] hover:bg-orange-50"
             )}
           >
             <Filter className="w-5 h-5" />
             <span>Фильтры</span>
           </button>
+          {onCreateRecipe && (
+            <button
+              onClick={onCreateRecipe}
+              className="px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all shadow-md shadow-orange-200 border cursor-pointer bg-[#D85A30] text-white border-[#D85A30] hover:bg-[#B84820]"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Создать рецепт</span>
+            </button>
+          )}
         </div>
 
         <AnimatePresence>
@@ -190,11 +226,20 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.2 }}
-              onClick={() => onSelectRecipe({ ...recipe, gradient: 'from-orange-50 to-amber-50' })}
+              onClick={() => onSelectRecipe({ ...recipe, gradient: recipe.gradient ?? 'from-orange-50 to-amber-50' })}
               className="group bg-white rounded-[32px] border border-orange-100/60 p-5 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all cursor-pointer"
             >
-              <div className="h-40 bg-orange-50 rounded-2xl mb-4 flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-500">
-                {recipe.emoji}
+              <div className="relative h-40 bg-orange-50 rounded-2xl mb-4 overflow-hidden flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-500">
+                {recipe.imageUrl ? (
+                  <img
+                    src={recipe.imageUrl}
+                    alt={recipe.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span>{recipe.emoji}</span>
+                )}
               </div>
               <h3 className="font-display font-semibold text-[#1a0a00] mb-2">{recipe.title}</h3>
               <div

@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, type ChangeEvent } from 'react';
 import { motion } from 'motion/react';
 import {
   User, Bookmark, Bell, Settings, LogOut, ArrowLeft,
-  Camera, Mail, Shield, Smartphone, Heart, Clock, ChefHat
+  Camera, Mail, Shield, Smartphone, Heart, Clock, ChefHat, Plus
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
-type Tab = 'profile' | 'saved' | 'notifications' | 'settings';
+type Tab = 'profile' | 'saved' | 'my-recipes' | 'notifications' | 'settings';
 
 interface SavedRecipe {
   id: string | number;
@@ -18,16 +18,25 @@ interface SavedRecipe {
   gradient: string;
 }
 
+interface MyRecipe extends SavedRecipe {
+  category?: string;
+  difficulty?: string;
+  timeRange?: string;
+  createdAt?: number;
+}
+
 interface ProfileLayoutProps {
   key?: string;
   initialTab: Tab;
   savedRecipes?: SavedRecipe[];
+  myRecipes?: MyRecipe[];
   onSelectRecipe?: (recipe: SavedRecipe) => void;
+  onCreateRecipe?: () => void;
   onBack: () => void;
   onLogout: () => void;
 }
 
-export default function ProfileLayout({ initialTab, savedRecipes = [], onSelectRecipe, onBack, onLogout }: ProfileLayoutProps) {
+export default function ProfileLayout({ initialTab, savedRecipes = [], myRecipes = [], onSelectRecipe, onCreateRecipe, onBack, onLogout }: ProfileLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [avatarUrl, setAvatarUrl] = useState('https://api.dicebear.com/7.x/avataaars/svg?seed=Felix');
   const [username, setUsername] = useState('Николай Кулинаров');
@@ -37,7 +46,7 @@ export default function ProfileLayout({ initialTab, savedRecipes = [], onSelectR
   const hasChanges = username !== savedUsername || bio !== savedBio;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
@@ -47,10 +56,17 @@ export default function ProfileLayout({ initialTab, savedRecipes = [], onSelectR
 
   const tabs = [
     { id: 'profile', label: 'Мой профиль', icon: User },
+    { id: 'my-recipes', label: 'Мои рецепты', icon: ChefHat },
     { id: 'saved', label: 'Сохраненные', icon: Bookmark },
     { id: 'notifications', label: 'Уведомления', icon: Bell },
     { id: 'settings', label: 'Настройки', icon: Settings },
   ] as const;
+
+  const formatRecipeCount = (count: number) => {
+    if (count === 1) return `${count} рецепт`;
+    if (count >= 2 && count <= 4) return `${count} рецепта`;
+    return `${count} рецептов`;
+  };
 
   return (
     <motion.div 
@@ -186,9 +202,7 @@ export default function ProfileLayout({ initialTab, savedRecipes = [], onSelectR
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-[#1a0a00]">Сохраненные рецепты</h2>
-                <span className="text-sm text-[#78716c]">
-                  {savedRecipes.length} {savedRecipes.length === 1 ? 'рецепт' : (savedRecipes.length >= 2 && savedRecipes.length <= 4 ? 'рецепта' : 'рецептов')}
-                </span>
+                <span className="text-sm text-[#78716c]">{formatRecipeCount(savedRecipes.length)}</span>
               </div>
               {savedRecipes.length === 0 ? (
                 <div className="text-center py-16">
@@ -212,6 +226,71 @@ export default function ProfileLayout({ initialTab, savedRecipes = [], onSelectR
                         <div className="flex items-center gap-3 text-[10px] text-[#78716c]">
                           <span className="flex items-center gap-1 font-bold">❤️ {recipe.likes}</span>
                           <span className="flex items-center gap-1 font-bold">⏱ {recipe.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'my-recipes' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              <div className="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#1a0a00]">Мои рецепты</h2>
+                  <p className="text-sm text-[#78716c] mt-1">Рецепты, которые вы опубликовали.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-[#78716c]">{formatRecipeCount(myRecipes.length)}</span>
+                  {onCreateRecipe && (
+                    <button
+                      onClick={onCreateRecipe}
+                      className="px-4 py-2.5 rounded-2xl flex items-center gap-2 font-bold text-sm transition-all shadow-md shadow-orange-200 bg-[#D85A30] text-white hover:bg-[#B84820] cursor-pointer"
+                    >
+                      <Plus size={16} />
+                      Создать рецепт
+                    </button>
+                  )}
+                </div>
+              </div>
+              {myRecipes.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-4">👨‍🍳</div>
+                  <h3 className="text-xl font-bold text-[#1a0a00] mb-2">Вы ещё ничего не опубликовали</h3>
+                  <p className="text-[#78716c] mb-6">Поделитесь своим первым рецептом с сообществом — это займёт пару минут.</p>
+                  {onCreateRecipe && (
+                    <button
+                      onClick={onCreateRecipe}
+                      className="inline-flex items-center gap-2 bg-[#D85A30] text-white px-6 py-3 rounded-2xl font-bold text-sm hover:shadow-lg shadow-orange-900/20 transition-all cursor-pointer"
+                    >
+                      <Plus size={16} />
+                      Создать первый рецепт
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {myRecipes.map(recipe => (
+                    <div
+                      key={String(recipe.id)}
+                      onClick={() => onSelectRecipe?.(recipe)}
+                      className="group bg-slate-50 rounded-3xl p-4 flex gap-4 hover:bg-orange-50 transition-colors cursor-pointer"
+                    >
+                      <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-3xl shrink-0">
+                        {recipe.emoji}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-sm text-[#1a0a00] mb-2">{recipe.title}</h3>
+                        <div className="flex items-center gap-3 text-[10px] text-[#78716c]">
+                          <span className="flex items-center gap-1 font-bold">❤️ {recipe.likes}</span>
+                          <span className="flex items-center gap-1 font-bold">⏱ {recipe.time}</span>
+                          {recipe.difficulty && (
+                            <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 font-bold uppercase tracking-wider">
+                              {recipe.difficulty === 'easy' ? 'легко' : recipe.difficulty === 'medium' ? 'средне' : 'сложно'}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Settings, Bookmark, LogOut, Bell } from 'lucide-react';
+import { User, Settings, Bookmark, LogOut, Bell, ChefHat } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
+type ProfileTab = 'profile' | 'saved' | 'my-recipes' | 'notifications' | 'settings';
+
 interface ProfileButtonProps {
-  onNavigate: (tab: 'profile' | 'saved' | 'notifications' | 'settings') => void;
+  onNavigate: (tab: ProfileTab) => void;
   onLogout: () => void;
 }
 
 export default function ProfileButton({ onNavigate, onLogout }: ProfileButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleAction = (tab: 'profile' | 'saved' | 'notifications' | 'settings') => {
+  const handleAction = (tab: ProfileTab) => {
     onNavigate(tab);
     setIsOpen(false);
   };
@@ -59,14 +61,21 @@ export default function ProfileButton({ onNavigate, onLogout }: ProfileButtonPro
               </div>
 
               <div className="space-y-1">
-                <button 
+                <button
                   onClick={() => handleAction('profile')}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-[#1a0a00] text-sm font-medium transition-colors cursor-pointer text-left"
                 >
                   <User size={18} className="text-[#78716c]" />
                   Мой профиль
                 </button>
-                <button 
+                <button
+                  onClick={() => handleAction('my-recipes')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-[#1a0a00] text-sm font-medium transition-colors cursor-pointer text-left"
+                >
+                  <ChefHat size={18} className="text-[#78716c]" />
+                  Мои рецепты
+                </button>
+                <button
                   onClick={() => handleAction('saved')}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-[#1a0a00] text-sm font-medium transition-colors cursor-pointer text-left"
                 >

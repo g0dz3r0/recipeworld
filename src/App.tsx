@@ -9,6 +9,7 @@ import AIAssistant from './components/AIAssistant';
 import Footer from './components/Footer';
 import ProfileLayout from './components/ProfileLayout';
 import UserProfile from './components/UserProfile';
+import RecipeCreator, { UserRecipeDraft } from './components/RecipeCreator';
 import { AnimatePresence, motion } from 'motion/react';
 import { MockUser } from './data/recipes';
 
@@ -27,28 +28,37 @@ interface Recipe {
   likes: string;
   time: string;
   gradient: string;
+  imageUrl?: string;
+  description?: string;
+  ingredients?: string[];
+  steps?: string[];
 }
 const SAVED_RECIPES_STORAGE_KEY = 'recipeworld:savedRecipes';
+const MY_RECIPES_STORAGE_KEY = 'recipeworld:myRecipes';
 
 const getRecipeKey = (recipe: Recipe) => String(recipe.id);
+
+const readPersistedRecipes = <T,>(key: string): T[] => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
+};
 
 export default function App() {
   const [selectedCuisine, setSelectedCuisine] = useState<Cuisine | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isExploring, setIsExploring] = useState(false);
   const [isAIActive, setIsAIActive] = useState(false);
-  const [profileTab, setProfileTab] = useState<'profile' | 'saved' | 'notifications' | 'settings' | null>(null);
+  const [isCreatingRecipe, setIsCreatingRecipe] = useState(false);
+  const [profileTab, setProfileTab] = useState<'profile' | 'saved' | 'my-recipes' | 'notifications' | 'settings' | null>(null);
   const [viewingUser, setViewingUser] = useState<MockUser | null>(null);
-  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>(() => {
-    try {
-      const rawSavedRecipes = localStorage.getItem(SAVED_RECIPES_STORAGE_KEY);
-      if (!rawSavedRecipes) return [];
-      const parsedSavedRecipes = JSON.parse(rawSavedRecipes);
-      return Array.isArray(parsedSavedRecipes) ? parsedSavedRecipes : [];
-    } catch {
-      return [];
-    }
-  });
+  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>(() => readPersistedRecipes<Recipe>(SAVED_RECIPES_STORAGE_KEY));
+  const [myRecipes, setMyRecipes] = useState<UserRecipeDraft[]>(() => readPersistedRecipes<UserRecipeDraft>(MY_RECIPES_STORAGE_KEY));
 
   useEffect(() => {
     try {
@@ -58,13 +68,49 @@ export default function App() {
     }
   }, [savedRecipes]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(MY_RECIPES_STORAGE_KEY, JSON.stringify(myRecipes));
+    } catch {
+      // ignore persistence errors
+    }
+  }, [myRecipes]);
+
   const handleBack = () => {
     setSelectedCuisine(null);
     setSelectedRecipe(null);
     setIsExploring(false);
     setIsAIActive(false);
+    setIsCreatingRecipe(false);
     setProfileTab(null);
     setViewingUser(null);
+  };
+
+  const handleCreateRecipe = (recipe: UserRecipeDraft) => {
+    // Pre-flight write so we surface the quota error to the form (where the
+    // user can drop the photo and retry) instead of silently swallowing it
+    // in the persistence useEffect.
+    const next = [recipe, ...myRecipes];
+    try {
+      localStorage.setItem(MY_RECIPES_STORAGE_KEY, JSON.stringify(next));
+    } catch (err) {
+      const isQuota = err instanceof DOMException && (err.name === 'QuotaExceededError' || err.code === 22);
+      throw new Error(isQuota
+        ? 'Не хватает места в браузере. Попробуйте удалить фото или один из старых рецептов.'
+        : 'Не удалось сохранить рецепт. Попробуйте ещё раз.');
+    }
+    setMyRecipes(next);
+    setIsCreatingRecipe(false);
+    setIsExploring(true);
+  };
+
+  const handleOpenAbout = () => {
+    handleBack();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 80);
+    });
   };
 
   const handleLogout = () => {
@@ -102,7 +148,7 @@ export default function App() {
               onSelectRecipe={(r) => { setViewingUser(null); setSelectedRecipe(r); }}
             />
           </motion.div>
-        ) : !selectedCuisine && !selectedRecipe && !isExploring && !isAIActive && !profileTab ? (
+        ) : !selectedCuisine && !selectedRecipe && !isExploring && !isAIActive && !profileTab && !isCreatingRecipe ? (
           <motion.div 
             key="landing"
             initial={{ opacity: 0 }}
@@ -123,24 +169,38 @@ export default function App() {
             />
           </motion.div>
         ) : profileTab ? (
-          <ProfileLayout 
+          <ProfileLayout
             key="profile"
             initialTab={profileTab}
             savedRecipes={savedRecipes}
+            myRecipes={myRecipes}
             onSelectRecipe={(recipe) => { setProfileTab(null); setSelectedRecipe(recipe); }}
+            onCreateRecipe={() => { setProfileTab(null); setIsCreatingRecipe(true); }}
             onBack={handleBack}
             onLogout={handleLogout}
           />
+        ) : isCreatingRecipe ? (
+          <motion.div
+            key="create"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <RecipeCreator
+              onBack={handleBack}
+              onCreate={handleCreateRecipe}
+            />
+          </motion.div>
         ) : isAIActive ? (
-          <motion.div 
+          <motion.div
             key="ai"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <AIAssistant 
-              onBack={handleBack} 
-              onSelectRecipe={(r) => setSelectedRecipe(r)} 
+            <AIAssistant
+              onBack={handleBack}
+              onSelectRecipe={(r) => setSelectedRecipe(r)}
             />
           </motion.div>
         ) : isExploring ? (
@@ -157,6 +217,8 @@ export default function App() {
               onNavigateProfile={(tab) => setProfileTab(tab)}
               onLogout={handleLogout}
               onViewUser={(user) => { setIsExploring(false); setViewingUser(user); }}
+              extraRecipes={myRecipes}
+              onCreateRecipe={() => { setIsExploring(false); setIsCreatingRecipe(true); }}
             />
           </motion.div>
         ) : selectedRecipe ? (
@@ -189,7 +251,7 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      <Navbar onAIClick={() => setIsAIActive(true)} />
+      <Navbar onAIClick={() => setIsAIActive(true)} onAboutClick={handleOpenAbout} />
     </div>
   );
 }

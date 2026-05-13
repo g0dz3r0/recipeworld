@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import ProfileButton from './ProfileButton';
 import FridgeButton from './FridgeButton';
 
+const UNSPLASH_PARAMS = 'auto=format&fit=crop&w=800&q=70';
+
 const TOP_DISHES = [
   {
     id: 'pasta',
@@ -12,7 +14,8 @@ const TOP_DISHES = [
     author: "Мария И.",
     likes: "243",
     time: "25 мин",
-    gradient: "from-orange-100 to-amber-50"
+    gradient: "from-orange-100 to-amber-50",
+    imageUrl: `https://images.unsplash.com/photo-1551183053-bf91a1d81141?${UNSPLASH_PARAMS}`,
   },
   {
     id: 'salad',
@@ -21,7 +24,8 @@ const TOP_DISHES = [
     author: "Александр Д.",
     likes: "187",
     time: "15 мин",
-    gradient: "from-green-50 to-emerald-100"
+    gradient: "from-green-50 to-emerald-100",
+    imageUrl: `https://images.unsplash.com/photo-1540420773420-3366772f4999?${UNSPLASH_PARAMS}`,
   },
   {
     id: 'pizza',
@@ -30,8 +34,27 @@ const TOP_DISHES = [
     author: "Луиджи В.",
     likes: "512",
     time: "20 мин",
-    gradient: "from-red-50 to-orange-100"
+    gradient: "from-red-50 to-orange-100",
+    imageUrl: `https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?${UNSPLASH_PARAMS}`,
   }
+];
+
+const DECOR_PHOTOS = [
+  {
+    src: `https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=600&q=75`,
+    alt: 'Панкейки',
+    className: 'absolute top-[8%] left-[4%] w-36 h-36 md:w-52 md:h-52 rotate-[-8deg]',
+  },
+  {
+    src: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=75`,
+    alt: 'Боул',
+    className: 'absolute bottom-[10%] left-[6%] w-32 h-32 md:w-48 md:h-48 rotate-[6deg]',
+  },
+  {
+    src: `https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=600&q=75`,
+    alt: 'Бургер',
+    className: 'absolute top-[6%] right-[26%] w-28 h-28 md:w-44 md:h-44 rotate-[10deg] hidden md:block',
+  },
 ];
 
 interface HeroProps {
@@ -72,13 +95,28 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
           <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full bg-orange-100/40 blur-3xl" id="bg-circle-1" />
           <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-amber-50/60 blur-3xl" id="bg-circle-2" />
           
-          {/* Scattered Emojis */}
+          {/* Scattered Emojis (subtle) */}
           <span className="absolute top-[10%] left-[55%] text-6xl opacity-[0.04] rotate-12">🍝</span>
           <span className="absolute top-[40%] left-[45%] text-5xl opacity-[0.04] -rotate-12">🥘</span>
           <span className="absolute top-[70%] left-[60%] text-7xl opacity-[0.04] rotate-45">🍜</span>
           <span className="absolute top-[15%] left-[85%] text-5xl opacity-[0.04] -rotate-45">🥗</span>
           <span className="absolute top-[60%] left-[10%] text-6xl opacity-[0.04] rotate-12">🍕</span>
           <span className="absolute top-[20%] left-[5%] text-5xl opacity-[0.04] -rotate-12">🧁</span>
+        </div>
+
+        {/* Decorative floating food photos */}
+        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+          {DECOR_PHOTOS.map((photo, i) => (
+            <motion.div
+              key={photo.src}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.15, duration: 0.7, ease: 'easeOut' }}
+              className={cn(photo.className, 'rounded-[28px] overflow-hidden border-4 border-white shadow-[0_15px_40px_rgba(216,90,48,0.18)]')}
+            >
+              <img src={photo.src} alt={photo.alt} className="w-full h-full object-cover" loading="lazy" />
+            </motion.div>
+          ))}
         </div>
 
         {/* Text Content */}
@@ -156,8 +194,12 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
                 className="w-64 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-orange-100/60 overflow-hidden relative z-20 hover:shadow-[0_30px_70px_rgba(216,90,48,0.15)] transition-shadow duration-500"
                 id="card-active"
               >
-                <div className={cn("h-36 bg-gradient-to-br flex items-center justify-center text-6xl", currentDish.gradient)}>
-                  {currentDish.emoji}
+                <div className={cn('relative h-36 bg-gradient-to-br overflow-hidden flex items-center justify-center text-6xl', currentDish.gradient)}>
+                  {currentDish.imageUrl ? (
+                    <img src={currentDish.imageUrl} alt={currentDish.title} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <span>{currentDish.emoji}</span>
+                  )}
                 </div>
                 <div className="p-5">
                   <div className="inline-block px-2 py-0.5 bg-orange-100 rounded text-[9px] font-bold text-orange-600 mb-2 uppercase tracking-wider">Топ дня</div>
@@ -184,8 +226,12 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
               className="absolute -bottom-10 -left-10 w-56 bg-white rounded-[28px] shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-orange-100/60 overflow-hidden rotate-2 z-10 translate-x-4 translate-y-4 group-hover:translate-x-2 transition-transform duration-500" 
               id="card-next"
             >
-              <div className={cn("h-28 bg-gradient-to-br flex items-center justify-center text-4xl", nextDish.gradient)}>
-                {nextDish.emoji}
+              <div className={cn('relative h-28 bg-gradient-to-br overflow-hidden flex items-center justify-center text-4xl', nextDish.gradient)}>
+                {nextDish.imageUrl ? (
+                  <img src={nextDish.imageUrl} alt={nextDish.title} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <span>{nextDish.emoji}</span>
+                )}
               </div>
               <div className="p-4 bg-white/50 backdrop-blur-sm">
                 <h3 className="font-display font-medium text-[12px] text-[#78716c] truncate">{nextDish.title}</h3>
@@ -200,8 +246,12 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
               className="absolute -bottom-20 -left-16 w-48 bg-white rounded-[24px] shadow-sm border border-orange-100/60 overflow-hidden -rotate-2 z-0 translate-x-8 translate-y-8 group-hover:translate-x-4 transition-transform duration-700" 
               id="card-third"
             >
-              <div className={cn("h-24 bg-gradient-to-br flex items-center justify-center text-3xl", thirdDish.gradient)}>
-                {thirdDish.emoji}
+              <div className={cn('relative h-24 bg-gradient-to-br overflow-hidden flex items-center justify-center text-3xl', thirdDish.gradient)}>
+                {thirdDish.imageUrl ? (
+                  <img src={thirdDish.imageUrl} alt={thirdDish.title} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <span>{thirdDish.emoji}</span>
+                )}
               </div>
               <div className="p-3 bg-white/30 backdrop-blur-sm">
                 <h3 className="font-display font-medium text-[10px] text-[#9ca3af] truncate">{thirdDish.title}</h3>

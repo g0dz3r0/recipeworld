@@ -10,6 +10,10 @@ interface RecipeDetailRecipe {
   likes: string;
   time: string;
   gradient: string;
+  imageUrl?: string;
+  description?: string;
+  ingredients?: string[];
+  steps?: string[];
 }
 
 interface RecipeDetailProps {
@@ -64,8 +68,19 @@ export default function RecipeDetail({ recipe, onBack, isSaved, onToggleSave, on
 
       <div className="bg-white rounded-[40px] border border-orange-100/60 overflow-hidden shadow-2xl shadow-orange-900/5" id="recipe-card-full">
         {/* Header Image/Emoji */}
-        <div className={`h-[300px] flex items-center justify-center text-9xl bg-gradient-to-br ${recipe.gradient}`} id="recipe-header">
-          {recipe.emoji}
+        <div
+          className={`relative h-[300px] flex items-center justify-center text-9xl bg-gradient-to-br ${recipe.gradient} overflow-hidden`}
+          id="recipe-header"
+        >
+          {recipe.imageUrl ? (
+            <img
+              src={recipe.imageUrl}
+              alt={recipe.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <span>{recipe.emoji}</span>
+          )}
         </div>
 
         <div className="p-8 md:p-12">
@@ -139,6 +154,12 @@ export default function RecipeDetail({ recipe, onBack, isSaved, onToggleSave, on
             </div>
           </div>
 
+          {recipe.description && (
+            <p className="text-[15px] leading-relaxed text-[#78716c] pb-2 -mt-2">
+              {recipe.description}
+            </p>
+          )}
+
           <div className="grid md:grid-cols-3 gap-12 pt-8 border-t border-orange-50">
             <div className="md:col-span-1">
               <h4 className="font-display text-xl font-bold text-[#1a0a00] mb-6 flex items-center gap-2">
@@ -146,10 +167,19 @@ export default function RecipeDetail({ recipe, onBack, isSaved, onToggleSave, on
                 Ингредиенты
               </h4>
               <ul className="space-y-4">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <li key={i} className="flex items-center gap-3 text-[#78716c] text-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-300 shrink-0" />
-                    Ингредиент #{i} для идеальной пасты
+                {(recipe.ingredients && recipe.ingredients.length > 0
+                  ? recipe.ingredients
+                  : [
+                      'Ингредиент #1 для идеальной пасты',
+                      'Ингредиент #2 для идеальной пасты',
+                      'Ингредиент #3 для идеальной пасты',
+                      'Ингредиент #4 для идеальной пасты',
+                      'Ингредиент #5 для идеальной пасты',
+                    ]
+                ).map((ingredient, index) => (
+                  <li key={index} className="flex items-start gap-3 text-[#78716c] text-sm leading-relaxed">
+                    <div className="w-1.5 h-1.5 rounded-full bg-orange-300 shrink-0 mt-2" />
+                    <span>{ingredient}</span>
                   </li>
                 ))}
               </ul>
@@ -158,16 +188,21 @@ export default function RecipeDetail({ recipe, onBack, isSaved, onToggleSave, on
             <div className="md:col-span-2">
               <h4 className="font-display text-xl font-bold text-[#1a0a00] mb-6">Способ приготовления</h4>
               <div className="space-y-8">
-                {[1, 2, 3].map(step => (
-                  <div key={step} className="flex gap-6">
+                {(recipe.steps && recipe.steps.length > 0
+                  ? recipe.steps
+                  : [
+                      'Подробное описание того, как именно нужно готовить это потрясающее блюдо. Сначала подготовьте все необходимое, затем приступайте к основному процессу. Не забудьте добавить щепотку любви!',
+                      'Продолжайте готовить, аккуратно следуя классическому методу. Прислушивайтесь к ингредиентам — они подскажут, когда всё готово.',
+                      'Подайте блюдо горячим, украсив зеленью и любимыми специями. Приятного аппетита!',
+                    ]
+                ).map((stepText, index) => (
+                  <div key={index} className="flex gap-6">
                     <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 font-bold flex items-center justify-center shrink-0 border border-orange-100">
-                      {step}
+                      {index + 1}
                     </div>
                     <div>
-                      <h5 className="font-bold text-[#1a0a00] mb-2">Шаг {step}</h5>
-                      <p className="text-sm leading-relaxed text-[#78716c]">
-                        Подробное описание того, как именно нужно готовить это потрясающее блюдо. Сначала подготовьте все необходимое, затем приступайте к основному процессу. Не забудьте добавить щепотку любви!
-                      </p>
+                      <h5 className="font-bold text-[#1a0a00] mb-2">Шаг {index + 1}</h5>
+                      <p className="text-sm leading-relaxed text-[#78716c] whitespace-pre-wrap">{stepText}</p>
                     </div>
                   </div>
                 ))}
