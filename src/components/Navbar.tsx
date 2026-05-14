@@ -44,8 +44,10 @@ export default function Navbar({ onAIClick, onAboutClick }: NavbarProps) {
         </button>
       </div>
 
-      <button 
-        className="bg-[#D85A30] text-white px-5 py-2 rounded-full text-[12px] font-semibold shadow-sm hover:bg-[#c44e27] transition-all cursor-pointer whitespace-nowrap"
+      <button
+        type="button"
+        aria-label="Скачать мобильное приложение RecipeWorld"
+        className="bg-[#D85A30] text-white px-5 py-2 rounded-full text-[12px] font-semibold shadow-sm hover:bg-[#c44e27] transition-all cursor-pointer whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
         id="nav-download"
       >
         Скачать →

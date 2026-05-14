@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Heart, Clock, Users, BookOpen, UserPlus, UserCheck } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
@@ -8,11 +7,14 @@ interface UserProfileProps {
   user: MockUser;
   onBack: () => void;
   onSelectRecipe?: (recipe: any) => void;
+  isFollowing?: boolean;
+  onToggleFollow?: () => void;
+  followersCount?: number;
+  onOpenFollowers?: () => void;
+  onOpenRecipes?: () => void;
 }
 
-export default function UserProfile({ user, onBack, onSelectRecipe }: UserProfileProps) {
-  const [isFollowing, setIsFollowing] = useState(false);
-
+export default function UserProfile({ user, onBack, onSelectRecipe, isFollowing = false, onToggleFollow, followersCount, onOpenFollowers, onOpenRecipes }: UserProfileProps) {
   const userRecipes = MOCK_RECIPES.filter(r => user.recipes.includes(r.id));
 
   return (
@@ -20,7 +22,7 @@ export default function UserProfile({ user, onBack, onSelectRecipe }: UserProfil
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="min-h-screen pt-12 px-6 max-w-4xl mx-auto pb-32"
+      className="min-h-screen pt-8 sm:pt-12 px-4 sm:px-6 max-w-4xl mx-auto pb-32"
     >
       <button
         onClick={onBack}
@@ -56,7 +58,7 @@ export default function UserProfile({ user, onBack, onSelectRecipe }: UserProfil
               {user.bio && <p className="text-sm text-[#78716c] max-w-md">{user.bio}</p>}
             </div>
             <button
-              onClick={() => setIsFollowing(!isFollowing)}
+              onClick={() => onToggleFollow?.()}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer shrink-0",
                 isFollowing
@@ -70,17 +72,23 @@ export default function UserProfile({ user, onBack, onSelectRecipe }: UserProfil
           </div>
 
           {/* Stats */}
-          <div className="flex gap-8 mb-10 justify-center md:justify-start">
-            <div className="flex items-center gap-2">
+          <div className="flex gap-2 mb-10 justify-center md:justify-start flex-wrap">
+            <button
+              onClick={onOpenFollowers}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors cursor-pointer"
+            >
               <Users size={18} className="text-orange-400" />
-              <span className="text-sm font-bold text-[#1a0a00]">{user.followers}</span>
+              <span className="text-sm font-bold text-[#1a0a00]">{followersCount !== undefined ? followersCount : user.followers}</span>
               <span className="text-xs text-[#78716c]">подписчиков</span>
-            </div>
-            <div className="flex items-center gap-2">
+            </button>
+            <button
+              onClick={onOpenRecipes}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors cursor-pointer"
+            >
               <BookOpen size={18} className="text-orange-400" />
               <span className="text-sm font-bold text-[#1a0a00]">{user.recipesCount}</span>
               <span className="text-xs text-[#78716c]">рецептов</span>
-            </div>
+            </button>
           </div>
 
           {/* Recipes */}
@@ -124,6 +132,7 @@ export default function UserProfile({ user, onBack, onSelectRecipe }: UserProfil
               </p>
             )}
           </div>
+
         </div>
       </div>
     </motion.div>

@@ -18,8 +18,20 @@ interface ExtraRecipe {
   timeRange: '<15' | '15-30' | '>30';
   gradient?: string;
   imageUrl?: string;
+  tags?: string[];
   createdAt?: number;
 }
+
+const TAG_OPTIONS: { id: string; label: string; emoji: string }[] = [
+  { id: 'vegetarian', label: 'Вегетарианское', emoji: '🌱' },
+  { id: 'vegan', label: 'Веганское', emoji: '🥬' },
+  { id: 'gluten-free', label: 'Без глютена', emoji: '🌾' },
+  { id: 'spicy', label: 'Острое', emoji: '🌶️' },
+  { id: 'kids', label: 'Детям', emoji: '🧒' },
+  { id: 'quick', label: 'Быстрое', emoji: '⏱' },
+  { id: 'budget', label: 'Бюджетное', emoji: '💰' },
+  { id: 'healthy', label: 'ЗОЖ', emoji: '💪' },
+];
 
 interface RecipesExplorerProps {
   onBack: () => void;
@@ -30,14 +42,21 @@ interface RecipesExplorerProps {
   onViewUser?: (user: MockUser) => void;
   extraRecipes?: ExtraRecipe[];
   onCreateRecipe?: () => void;
+  profileAvatarUrl?: string;
+  profileUsername?: string;
 }
 
-export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onNavigateProfile, onLogout, onViewUser, extraRecipes = [], onCreateRecipe }: RecipesExplorerProps) {
+export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onNavigateProfile, onLogout, onViewUser, extraRecipes = [], onCreateRecipe, profileAvatarUrl, profileUsername }: RecipesExplorerProps) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [difficulty, setDifficulty] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+
+  const toggleTag = (tag: string) => {
+    setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
 
   const sortedExtras = [...extraRecipes].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   type DisplayRecipe = ExtraRecipe;
@@ -54,7 +73,9 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
     const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDifficulty = difficulty === 'all' || recipe.difficulty === difficulty;
     const matchesTime = timeRange === 'all' || recipe.timeRange === timeRange;
-    return matchesCategory && matchesSearch && matchesDifficulty && matchesTime;
+    const recipeTags = recipe.tags ?? [];
+    const matchesTags = activeTags.length === 0 || activeTags.every(t => recipeTags.includes(t));
+    return matchesCategory && matchesSearch && matchesDifficulty && matchesTime && matchesTags;
   });
 
   return (
@@ -62,7 +83,7 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-12 px-6 max-w-7xl mx-auto pb-32"
+      className="min-h-screen pt-8 sm:pt-12 px-4 sm:px-6 max-w-7xl mx-auto pb-32"
       id="recipes-explorer"
     >
       <header className="mb-12 relative">
@@ -78,15 +99,17 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
 
           {/* Right Section: Profile and Fridge */}
           <div className="flex flex-col items-center gap-6 md:order-last">
-            <ProfileButton 
-              onNavigate={(tab) => onNavigateProfile?.(tab)} 
-              onLogout={() => onLogout?.()} 
+            <ProfileButton
+              onNavigate={(tab) => onNavigateProfile?.(tab)}
+              onLogout={() => onLogout?.()}
+              avatarUrl={profileAvatarUrl}
+              username={profileUsername}
             />
             <FridgeButton onClick={onAIClick} />
           </div>
         </div>
 
-        <h1 className="font-display text-4xl md:text-5xl font-bold text-[#1a0a00] mb-8">Исследуйте мир вкусов</h1>
+        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-[#1a0a00] mb-6 sm:mb-8">Исследуйте мир вкусов</h1>
         
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -181,12 +204,38 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
                   </div>
                 </div>
 
-                <button 
+                <div className="space-y-3 basis-full">
+                  <h4 className="text-[14px] font-bold text-[#1a0a00]">Теги</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {TAG_OPTIONS.map(tag => {
+                      const active = activeTags.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          onClick={() => toggleTag(tag.id)}
+                          aria-pressed={active}
+                          className={cn(
+                            'flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border transition-all cursor-pointer',
+                            active
+                              ? 'bg-orange-100 border-orange-300 text-[#D85A30]'
+                              : 'bg-slate-50 border-transparent text-[#78716c] hover:bg-orange-50',
+                          )}
+                        >
+                          <span>{tag.emoji}</span>
+                          {tag.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button
                   onClick={() => {
                     setDifficulty('all');
                     setTimeRange('all');
                     setSearchQuery('');
                     setActiveCategory('all');
+                    setActiveTags([]);
                   }}
                   className="mt-auto mb-1 text-[12px] font-bold text-[#D85A30] hover:underline cursor-pointer"
                 >
@@ -227,7 +276,16 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.2 }}
               onClick={() => onSelectRecipe({ ...recipe, gradient: recipe.gradient ?? 'from-orange-50 to-amber-50' })}
-              className="group bg-white rounded-[32px] border border-orange-100/60 p-5 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all cursor-pointer"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectRecipe({ ...recipe, gradient: recipe.gradient ?? 'from-orange-50 to-amber-50' });
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Открыть рецепт: ${recipe.title}`}
+              className="group bg-white rounded-[32px] border border-orange-100/60 p-5 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
             >
               <div className="relative h-40 bg-orange-50 rounded-2xl mb-4 overflow-hidden flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-500">
                 {recipe.imageUrl ? (
@@ -264,10 +322,37 @@ export default function RecipesExplorer({ onBack, onSelectRecipe, onAIClick, onN
       </div>
 
       {filteredRecipes.length === 0 && (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-bold text-[#1a0a00]">Ничего не найдено</h3>
-          <p className="text-[#78716c]">Попробуйте изменить запрос или категорию</p>
+        <div className="text-center py-20 max-w-md mx-auto">
+          <div className="text-6xl mb-4" aria-hidden="true">🔍</div>
+          <h3 className="text-xl font-bold text-[#1a0a00] mb-2">Ничего не найдено</h3>
+          <p className="text-[#78716c] mb-6">
+            {searchQuery
+              ? `По запросу «${searchQuery}» нет рецептов. Попробуйте другие слова или сбросьте фильтры.`
+              : 'В этой категории нет рецептов с такими фильтрами. Можно создать свой или сбросить фильтры.'}
+          </p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <button
+              onClick={() => {
+                setDifficulty('all');
+                setTimeRange('all');
+                setSearchQuery('');
+                setActiveCategory('all');
+                setActiveTags([]);
+              }}
+              className="px-5 py-3 rounded-2xl font-bold text-sm bg-slate-50 text-[#1a0a00] hover:bg-orange-50 transition-colors cursor-pointer border border-orange-100"
+            >
+              Сбросить фильтры
+            </button>
+            {onCreateRecipe && (
+              <button
+                onClick={onCreateRecipe}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm bg-[#D85A30] text-white hover:shadow-lg shadow-orange-900/20 transition-all cursor-pointer"
+              >
+                <Plus size={16} />
+                Создать рецепт
+              </button>
+            )}
+          </div>
         </div>
       )}
     </motion.div>

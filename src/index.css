@@ -1,14 +1,110 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+/* Enable Tailwind dark variant via .dark class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-serif, system-ui, serif;
 }
 
 @layer base {
+  html {
+    color-scheme: light;
+    background-color: #fdf8f5;
+  }
+  html.dark {
+    color-scheme: dark;
+    background-color: #1a0a00;
+  }
   body {
     background-color: #fdf8f5;
-    @apply text-slate-900 antialiased;
+    @apply text-slate-900 antialiased transition-colors duration-300;
   }
+  html.dark body {
+    background-color: #1a0a00;
+    color: #f5e6dc;
+  }
+}
+
+/*
+ * Dark theme color mapping for legacy classes used across the codebase. Rather
+ * than touching every component with a `dark:` variant, we remap the common
+ * hard-coded oranges/slate values when .dark is on <html>. Components that
+ * want a fancier dark style can still override with their own `dark:` class.
+ */
+.dark .bg-white { background-color: #241410; }
+.dark .bg-white\/80 { background-color: rgba(36, 20, 16, 0.85); }
+.dark .bg-white\/90 { background-color: rgba(36, 20, 16, 0.92); }
+.dark .bg-white\/95 { background-color: rgba(36, 20, 16, 0.95); }
+
+.dark .text-\[\#1a0a00\] { color: #f5e6dc; }
+.dark .text-\[\#78716c\] { color: #a89588; }
+.dark .text-slate-500 { color: #a89588; }
+.dark .text-slate-900 { color: #f5e6dc; }
+.dark .text-orange-600 { color: #f99a6b; }
+
+.dark .bg-slate-50 { background-color: rgba(50, 25, 18, 0.7); }
+.dark .bg-slate-100 { background-color: rgba(60, 30, 22, 0.7); }
+.dark .bg-slate-200 { background-color: rgba(80, 50, 38, 0.5); }
+.dark .bg-slate-300 { background-color: rgba(100, 70, 55, 0.5); }
+.dark .text-slate-200 { color: rgba(245, 230, 220, 0.6); }
+.dark .text-slate-100 { color: rgba(245, 230, 220, 0.4); }
+
+.dark .bg-orange-50 { background-color: rgba(120, 50, 10, 0.18); }
+.dark .bg-orange-50\/40 { background-color: rgba(120, 50, 10, 0.12); }
+.dark .bg-orange-50\/60 { background-color: rgba(120, 50, 10, 0.18); }
+.dark .bg-orange-100 { background-color: rgba(180, 80, 30, 0.22); }
+.dark .bg-orange-100\/40 { background-color: rgba(180, 80, 30, 0.12); }
+
+.dark .border-orange-50 { border-color: rgba(160, 90, 40, 0.2); }
+.dark .border-orange-100 { border-color: rgba(160, 90, 40, 0.28); }
+.dark .border-orange-100\/40 { border-color: rgba(160, 90, 40, 0.2); }
+.dark .border-orange-100\/60 { border-color: rgba(160, 90, 40, 0.32); }
+.dark .border-orange-200 { border-color: rgba(180, 100, 50, 0.4); }
+.dark .border-orange-300 { border-color: rgba(200, 120, 65, 0.55); }
+
+.dark .bg-red-50 { background-color: rgba(120, 30, 30, 0.2); }
+.dark .border-red-100 { border-color: rgba(180, 60, 60, 0.35); }
+.dark .text-red-500 { color: #ff9494; }
+.dark .text-red-600 { color: #ff8a8a; }
+
+.dark .bg-green-50 { background-color: rgba(30, 80, 40, 0.2); }
+.dark .border-green-100 { border-color: rgba(60, 150, 80, 0.35); }
+.dark .text-green-500 { color: #84e0a4; }
+
+.dark .bg-amber-50 { background-color: rgba(120, 80, 20, 0.22); }
+.dark .bg-emerald-100 { background-color: rgba(30, 110, 70, 0.28); }
+.dark .bg-rose-100 { background-color: rgba(140, 60, 80, 0.28); }
+
+/* Subtle hover surfaces — keep a hint of orange wash */
+.dark .hover\:bg-orange-50:hover { background-color: rgba(180, 80, 30, 0.22); }
+.dark .hover\:bg-slate-50:hover { background-color: rgba(60, 30, 22, 0.7); }
+.dark .hover\:bg-orange-100:hover { background-color: rgba(200, 100, 40, 0.3); }
+
+/* Gradient backgrounds — soften the warm tones for night */
+.dark .from-orange-100 { --tw-gradient-from: rgba(180, 80, 30, 0.35); }
+.dark .to-amber-50 { --tw-gradient-to: rgba(160, 110, 40, 0.18); }
+.dark .from-amber-50 { --tw-gradient-from: rgba(160, 110, 40, 0.2); }
+.dark .to-orange-100 { --tw-gradient-to: rgba(180, 80, 30, 0.35); }
+.dark .from-orange-50 { --tw-gradient-from: rgba(150, 70, 20, 0.18); }
+.dark .from-red-50 { --tw-gradient-from: rgba(150, 50, 30, 0.18); }
+.dark .from-green-50 { --tw-gradient-from: rgba(40, 90, 50, 0.18); }
+.dark .from-cyan-50 { --tw-gradient-from: rgba(40, 90, 110, 0.18); }
+.dark .from-pink-50 { --tw-gradient-from: rgba(140, 60, 80, 0.18); }
+
+@layer utilities {
+  .theme-surface {
+    @apply bg-white dark:bg-[#241410] transition-colors;
+  }
+  .theme-text {
+    @apply text-[#1a0a00] dark:text-orange-50 transition-colors;
+  }
+  .theme-text-muted {
+    @apply text-[#78716c] dark:text-[#b5a89f] transition-colors;
+  }
+  /* Hides the scrollbar for the tab-strip on mobile. Still scrollable. */
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }

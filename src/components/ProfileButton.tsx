@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Settings, Bookmark, LogOut, Bell, ChefHat } from 'lucide-react';
+import { User, Settings, Bookmark, LogOut, Bell } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
-type ProfileTab = 'profile' | 'saved' | 'my-recipes' | 'notifications' | 'settings';
+type ProfileTab = 'profile' | 'saved' | 'notifications' | 'settings';
 
 interface ProfileButtonProps {
   onNavigate: (tab: ProfileTab) => void;
   onLogout: () => void;
+  avatarUrl?: string;
+  username?: string;
+  email?: string;
 }
 
-export default function ProfileButton({ onNavigate, onLogout }: ProfileButtonProps) {
+export default function ProfileButton({
+  onNavigate,
+  onLogout,
+  avatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  username = 'Николай Кулинаров',
+  email = 'chef.nikolay@recipeworld.app',
+}: ProfileButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAction = (tab: ProfileTab) => {
@@ -25,15 +34,15 @@ export default function ProfileButton({ onNavigate, onLogout }: ProfileButtonPro
         className="flex items-center gap-3 bg-white/80 backdrop-blur-md border border-orange-100 p-1.5 pr-4 rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer group"
       >
         <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-400 to-amber-300 flex items-center justify-center text-white shadow-inner overflow-hidden">
-          <img 
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" 
-            alt="Avatar" 
+          <img
+            src={avatarUrl}
+            alt={`Аватар ${username}`}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover"
           />
         </div>
         <div className="text-left hidden sm:block">
-          <div className="text-[12px] font-bold text-[#1a0a00]">Николай</div>
+          <div className="text-[12px] font-bold text-[#1a0a00]">{username.split(' ')[0]}</div>
           <div className="text-[10px] text-[#78716c]">Шеф-повар</div>
         </div>
       </button>
@@ -56,8 +65,8 @@ export default function ProfileButton({ onNavigate, onLogout }: ProfileButtonPro
                   <span className="text-xs font-bold text-orange-600 uppercase tracking-tighter bg-orange-50 px-2 py-0.5 rounded">Pro</span>
                   <span className="text-[11px] text-[#78716c]">1.2k подписчиков</span>
                 </div>
-                <div className="text-sm font-bold text-[#1a0a00]">Николай Кулинаров</div>
-                <div className="text-[11px] text-[#78716c]">chef.nikolay@recipeworld.app</div>
+                <div className="text-sm font-bold text-[#1a0a00]">{username}</div>
+                <div className="text-[11px] text-[#78716c]">{email}</div>
               </div>
 
               <div className="space-y-1">
@@ -69,20 +78,13 @@ export default function ProfileButton({ onNavigate, onLogout }: ProfileButtonPro
                   Мой профиль
                 </button>
                 <button
-                  onClick={() => handleAction('my-recipes')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-[#1a0a00] text-sm font-medium transition-colors cursor-pointer text-left"
-                >
-                  <ChefHat size={18} className="text-[#78716c]" />
-                  Мои рецепты
-                </button>
-                <button
                   onClick={() => handleAction('saved')}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-[#1a0a00] text-sm font-medium transition-colors cursor-pointer text-left"
                 >
                   <Bookmark size={18} className="text-[#78716c]" />
                   Сохраненные
                 </button>
-                <button 
+                <button
                   onClick={() => handleAction('notifications')}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-[#1a0a00] text-sm font-medium transition-colors cursor-pointer text-left"
                 >

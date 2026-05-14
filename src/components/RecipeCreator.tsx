@@ -20,6 +20,7 @@ export interface UserRecipeDraft {
   description?: string;
   ingredients?: string[];
   steps?: string[];
+  tags?: string[];
   createdAt: number;
 }
 
@@ -27,7 +28,20 @@ interface RecipeCreatorProps {
   onBack: () => void;
   onCreate: (recipe: UserRecipeDraft) => void;
   defaultAuthor?: string;
+  /** When provided, the form starts pre-filled with this recipe and saves as an edit (same id). */
+  initialRecipe?: UserRecipeDraft;
 }
+
+export const RECIPE_TAGS: { id: string; label: string; emoji: string }[] = [
+  { id: 'vegetarian', label: 'Вегетарианское', emoji: '🌱' },
+  { id: 'vegan', label: 'Веганское', emoji: '🥬' },
+  { id: 'gluten-free', label: 'Без глютена', emoji: '🌾' },
+  { id: 'spicy', label: 'Острое', emoji: '🌶️' },
+  { id: 'kids', label: 'Детям', emoji: '🧒' },
+  { id: 'quick', label: 'Быстрое', emoji: '⏱' },
+  { id: 'budget', label: 'Бюджетное', emoji: '💰' },
+  { id: 'healthy', label: 'ЗОЖ', emoji: '💪' },
+];
 
 // Fallback emoji per category — used only when something tries to render the
 // recipe without an image (shouldn't happen now that photos are required, but
@@ -62,21 +76,31 @@ const GRADIENTS_BY_CATEGORY: Record<string, string> = {
 
 const SELECTABLE_CATEGORIES = CATEGORIES.filter(c => c.id !== 'all');
 
-export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы' }: RecipeCreatorProps) {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<string>(SELECTABLE_CATEGORIES[0]?.id ?? 'pasta');
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
-  const [timeRange, setTimeRange] = useState<'<15' | '15-30' | '>30'>('15-30');
-  const [timeText, setTimeText] = useState('25 мин');
-  const [author, setAuthor] = useState(defaultAuthor);
-  const [description, setDescription] = useState('');
-  const [ingredients, setIngredients] = useState<string[]>(['', '']);
-  const [steps, setSteps] = useState<string[]>(['']);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы', initialRecipe }: RecipeCreatorProps) {
+  const isEditing = !!initialRecipe;
+  const [title, setTitle] = useState(initialRecipe?.title ?? '');
+  const [category, setCategory] = useState<string>(initialRecipe?.category ?? SELECTABLE_CATEGORIES[0]?.id ?? 'pasta');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>(initialRecipe?.difficulty ?? 'easy');
+  const [timeRange, setTimeRange] = useState<'<15' | '15-30' | '>30'>(initialRecipe?.timeRange ?? '15-30');
+  const [timeText, setTimeText] = useState(initialRecipe?.time ?? '25 мин');
+  const [author, setAuthor] = useState(initialRecipe?.author ?? defaultAuthor);
+  const [description, setDescription] = useState(initialRecipe?.description ?? '');
+  const [ingredients, setIngredients] = useState<string[]>(
+    initialRecipe?.ingredients && initialRecipe.ingredients.length > 0 ? initialRecipe.ingredients : ['', ''],
+  );
+  const [steps, setSteps] = useState<string[]>(
+    initialRecipe?.steps && initialRecipe.steps.length > 0 ? initialRecipe.steps : [''],
+  );
+  const [tags, setTags] = useState<string[]>(initialRecipe?.tags ?? []);
+  const [imageUrl, setImageUrl] = useState<string | null>(initialRecipe?.imageUrl ?? null);
   const [imageMeta, setImageMeta] = useState<{ width: number; height: number; approxKB: number } | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleTag = (tagId: string) => {
+    setTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]);
+  };
 
   const updateIngredient = (index: number, value: string) => {
     setIngredients(prev => prev.map((v, i) => (i === index ? value : v)));
@@ -145,7 +169,7 @@ export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы'
     const trimmedAuthor = author.trim() || 'Вы';
 
     const recipe: UserRecipeDraft = {
-      id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: initialRecipe?.id ?? `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       title: trimmedTitle,
       emoji: CATEGORY_EMOJI[category] ?? '🍽️',
       author: trimmedAuthor,
@@ -153,13 +177,14 @@ export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы'
       difficulty,
       time: timeText.trim() || '25 мин',
       timeRange,
-      likes: '0',
+      likes: initialRecipe?.likes ?? '0',
       gradient: GRADIENTS_BY_CATEGORY[category] ?? 'from-orange-50 to-amber-50',
       imageUrl: imageUrl ?? undefined,
       description: description.trim() || undefined,
       ingredients: cleanIngredients,
       steps: cleanSteps,
-      createdAt: Date.now(),
+      tags: tags.length > 0 ? tags : undefined,
+      createdAt: initialRecipe?.createdAt ?? Date.now(),
     };
     try {
       onCreate(recipe);
@@ -174,7 +199,7 @@ export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы'
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="min-h-screen pt-12 px-6 max-w-3xl mx-auto pb-32"
+      className="min-h-screen pt-8 sm:pt-12 px-4 sm:px-6 max-w-3xl mx-auto pb-32"
     >
       <button
         onClick={onBack}
@@ -223,14 +248,18 @@ export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы'
           )}
         </div>
 
-        <div className="p-8 md:p-12 space-y-8">
+        <div className="p-5 sm:p-8 md:p-12 space-y-8">
           <div>
-            <div className="inline-block px-3 py-1 bg-orange-100 rounded-full text-[10px] font-bold text-orange-600 mb-4 uppercase tracking-wider flex items-center gap-1 w-fit">
+            <div className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 rounded-full text-[10px] font-bold text-orange-600 mb-4 uppercase tracking-wider w-fit">
               <ChefHat className="w-3 h-3" />
-              Новый рецепт
+              {isEditing ? 'Редактирование' : 'Новый рецепт'}
             </div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-[#1a0a00]">Создать рецепт</h2>
-            <p className="text-sm text-[#78716c] mt-2">Расскажите миру о вашем любимом блюде.</p>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-[#1a0a00]">
+              {isEditing ? 'Редактировать рецепт' : 'Создать рецепт'}
+            </h2>
+            <p className="text-sm text-[#78716c] mt-2">
+              {isEditing ? 'Поправьте поля, нажмите «Сохранить изменения» когда будете готовы.' : 'Расскажите миру о вашем любимом блюде.'}
+            </p>
           </div>
 
           {/* Photo */}
@@ -362,6 +391,32 @@ export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы'
             </div>
           </div>
 
+          {/* Tags */}
+          <div className="space-y-3">
+            <label className="text-sm font-bold text-[#1a0a00]">Теги <span className="text-[#78716c] font-normal">(необязательно)</span></label>
+            <div className="flex flex-wrap gap-2">
+              {RECIPE_TAGS.map(tag => {
+                const active = tags.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.id)}
+                    aria-pressed={active}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all cursor-pointer',
+                      active
+                        ? 'bg-orange-100 border-orange-300 text-[#D85A30]'
+                        : 'bg-slate-50 border-transparent text-[#78716c] hover:bg-orange-50',
+                    )}
+                  >
+                    <span>{tag.emoji}</span>
+                    {tag.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Description */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-[#1a0a00]">Краткое описание</label>
@@ -478,7 +533,7 @@ export default function RecipeCreator({ onBack, onCreate, defaultAuthor = 'Вы'
               className="bg-[#D85A30] text-white px-6 py-3.5 rounded-2xl font-bold text-sm hover:shadow-lg shadow-orange-900/20 transition-all cursor-pointer flex items-center gap-2"
             >
               <Check size={18} />
-              Опубликовать рецепт
+              {isEditing ? 'Сохранить изменения' : 'Опубликовать рецепт'}
             </button>
             <button
               onClick={onBack}

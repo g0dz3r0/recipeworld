@@ -17,7 +17,8 @@ export default function FridgeButton({ onClick }: FridgeButtonProps) {
       onClick={onClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className="relative flex flex-col items-center group cursor-pointer"
+      aria-label="Открыть ИИ-помощника по содержимому холодильника"
+      className="relative flex flex-col items-center group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 rounded-2xl"
       id="fridge-button"
     >
       <div className="relative w-28 h-36 rounded-2xl overflow-hidden flex items-center justify-center transition-all group-hover:shadow-xl group-hover:shadow-orange-900/10">

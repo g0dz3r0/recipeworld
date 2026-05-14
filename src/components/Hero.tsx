@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { cn } from '@/src/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
 import ProfileButton from './ProfileButton';
 import FridgeButton from './FridgeButton';
 
@@ -63,7 +63,7 @@ interface HeroProps {
   onAIClick?: () => void;
 }
 
-export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateProfile, onLogout }: HeroProps & { onNavigateProfile?: (tab: any) => void; onLogout?: () => void }) {
+export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateProfile, onLogout, profileAvatarUrl, profileUsername }: HeroProps & { onNavigateProfile?: (tab: any) => void; onLogout?: () => void; profileAvatarUrl?: string; profileUsername?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -77,15 +77,44 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
   const nextDish = TOP_DISHES[(currentIndex + 1) % TOP_DISHES.length];
   const thirdDish = TOP_DISHES[(currentIndex + 2) % TOP_DISHES.length];
 
+  // 3D tilt — drives rotateX/rotateY on the floating cards based on the mouse
+  // position over the container. Spring smooths the motion so it doesn't feel
+  // twitchy when the cursor moves fast.
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const tiltX = useMotionValue(0); // -1..1
+  const tiltY = useMotionValue(0); // -1..1
+  const springX = useSpring(tiltX, { stiffness: 120, damping: 14 });
+  const springY = useSpring(tiltY, { stiffness: 120, damping: 14 });
+  const rotateY = useTransform(springX, [-1, 1], [-12, 12]);
+  const rotateX = useTransform(springY, [-1, 1], [10, -10]);
+  const translateZ = useTransform(springX, (v) => Math.abs(v) * 12);
+
+  const handleMouseMove = (e: ReactMouseEvent<HTMLDivElement>) => {
+    const el = tiltRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;  // 0..1
+    const y = (e.clientY - rect.top) / rect.height;  // 0..1
+    tiltX.set(x * 2 - 1);
+    tiltY.set(y * 2 - 1);
+  };
+
+  const handleMouseLeave = () => {
+    tiltX.set(0);
+    tiltY.set(0);
+  };
+
   return (
     <section className="px-4 pt-10 pb-4" id="hero-section">
       <div className="relative w-full max-w-[1400px] mx-auto rounded-[48px] bg-white border border-orange-100/50 shadow-[0_40px_100px_-20px_rgba(216,90,48,0.06)] overflow-hidden min-h-[500px] md:h-[600px] flex flex-col" id="hero-container">
         
         {/* Profile and Fridge Buttons Top Right */}
         <div className="absolute top-8 right-8 z-50 flex flex-col items-center gap-6">
-          <ProfileButton 
-            onNavigate={(tab) => onNavigateProfile?.(tab)} 
-            onLogout={() => onLogout?.()} 
+          <ProfileButton
+            onNavigate={(tab) => onNavigateProfile?.(tab)}
+            onLogout={() => onLogout?.()}
+            avatarUrl={profileAvatarUrl}
+            username={profileUsername}
           />
           <FridgeButton onClick={() => onAIClick?.()} />
         </div>
@@ -133,7 +162,7 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
             </div>
 
             {/* Headline */}
-            <h1 className="font-display text-[44px] md:text-[58px] font-medium tracking-tight text-[#1a0a00] leading-[1.1] mb-6" id="hero-headline">
+            <h1 className="font-display text-[44px] md:text-[58px] font-medium tracking-tight text-[#1a0a00] dark:text-orange-50 leading-[1.1] mb-6" id="hero-headline">
               Готовь. Делись.<br />
               <span className="text-[#D85A30]">Вдохновляй</span> других.
             </h1>
@@ -165,15 +194,15 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
             {/* Stats */}
             <div className="flex gap-8 mt-12 md:mt-16" id="hero-stats">
               <div id="stat-1">
-                <div className="text-[22px] font-display font-bold text-[#1a0a00]">10 000+</div>
+                <div className="text-[22px] font-display font-bold text-[#1a0a00] dark:text-orange-50">10 000+</div>
                 <div className="text-[12px] text-[#78716c]">рецептов</div>
               </div>
               <div id="stat-2">
-                <div className="text-[22px] font-display font-bold text-[#1a0a00]">50 000+</div>
+                <div className="text-[22px] font-display font-bold text-[#1a0a00] dark:text-orange-50">50 000+</div>
                 <div className="text-[12px] text-[#78716c]">пользователей</div>
               </div>
               <div id="stat-3">
-                <div className="text-[22px] font-display font-bold text-[#1a0a00]">4.9 ★</div>
+                <div className="text-[22px] font-display font-bold text-[#1a0a00] dark:text-orange-50">4.9 ★</div>
                 <div className="text-[12px] text-[#78716c]">рейтинг</div>
               </div>
             </div>
@@ -181,8 +210,22 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
         </div>
 
         {/* Floating Cards (Desktop only) */}
-        <div className="hidden lg:block absolute right-40 top-1/2 -translate-y-1/2 z-20" id="floating-cards-container">
-          <div className="relative group cursor-pointer" onClick={() => onSelectRecipe?.(currentDish)}>
+        <div
+          ref={tiltRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="hidden lg:block absolute right-40 top-1/2 -translate-y-1/2 z-20"
+          id="floating-cards-container"
+          style={{ perspective: 1200 }}
+        >
+          <div
+            className="relative group cursor-pointer"
+            onClick={() => onSelectRecipe?.(currentDish)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectRecipe?.(currentDish); } }}
+            aria-label={`Открыть рецепт: ${currentDish.title}`}
+          >
             <AnimatePresence mode="popLayout">
               {/* Primary Card */}
               <motion.div
@@ -191,6 +234,7 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -60, scale: 0.9 }}
                 transition={{ duration: 0.6, ease: "anticipate" }}
+                style={{ rotateX, rotateY, transformStyle: 'preserve-3d', z: translateZ }}
                 className="w-64 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-orange-100/60 overflow-hidden relative z-20 hover:shadow-[0_30px_70px_rgba(216,90,48,0.15)] transition-shadow duration-500"
                 id="card-active"
               >
@@ -203,7 +247,7 @@ export default function Hero({ onSelectRecipe, onExplore, onAIClick, onNavigateP
                 </div>
                 <div className="p-5">
                   <div className="inline-block px-2 py-0.5 bg-orange-100 rounded text-[9px] font-bold text-orange-600 mb-2 uppercase tracking-wider">Топ дня</div>
-                  <h3 className="font-display font-medium text-[16px] text-[#1a0a00] mb-2">{currentDish.title}</h3>
+                  <h3 className="font-display font-medium text-[16px] text-[#1a0a00] dark:text-orange-50 mb-2">{currentDish.title}</h3>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-5 h-5 rounded-full bg-orange-50 flex items-center justify-center text-[9px] text-orange-500 font-bold border border-orange-100">
                       {currentDish.author[0]}
